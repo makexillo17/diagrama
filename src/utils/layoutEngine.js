@@ -1,5 +1,5 @@
 export const LAYOUT_PRESETS = [
-  'Lineal', 'Rejilla', 'Explosión', 'Apilamiento', 
+  'Lineal', 'Rejilla', 'Explosión', 'Apilamiento', 'Intercalado',
   'Centralizado', 'Agrupación', 'Anidado', 'Ortogonal', 
   'Orgánico', 'Simétrico', 'Asimétrico', 'Concéntrico', 
   'Sincopado', 'Sintáctico'
@@ -9,7 +9,7 @@ export const applyLayout = (blocks, preset, options = {}) => {
   // Global Parametric Config
   const scale = options.scaleFactor || 10;
   const width = options.globalWidth || 100;
-  const gap = Math.max(5, typeof options.gap !== 'undefined' ? options.gap : 20);
+  const gap = typeof options.gap !== 'undefined' ? options.gap : 20;
 
   // Layout Specific Config
   const orderBy = options.orderBy || 'None';
@@ -24,15 +24,11 @@ export const applyLayout = (blocks, preset, options = {}) => {
 
   if (newBlocks.length === 0) return newBlocks;
 
-  // Apply sorting if needed
-  if (preset === 'Lineal' || preset === 'Apilamiento') {
-    if (orderBy === 'Mayor Área') {
-      newBlocks.sort((a, b) => b.area - a.area);
-    } else if (orderBy === 'Menor Área') {
-      newBlocks.sort((a, b) => a.area - b.area);
-    } else if (orderBy === 'Alfabético') {
-      newBlocks.sort((a, b) => a.name.localeCompare(b.name));
-    }
+  // Apply sorting
+  if (orderBy === 'Mayor a menor') {
+    newBlocks.sort((a, b) => b.area - a.area);
+  } else if (orderBy === 'Menor a mayor') {
+    newBlocks.sort((a, b) => a.area - b.area);
   }
 
   const n = newBlocks.length;
@@ -73,6 +69,25 @@ export const applyLayout = (blocks, preset, options = {}) => {
       newBlocks.forEach((b) => {
         const h = getHeight(b.area);
         b.x = 0; 
+        b.y = currentY;
+        currentY += h + gap;
+      });
+      break;
+    }
+    case 'Intercalado': {
+      let currentY = 0;
+      const offsetPercent = (typeof options.offsetX !== 'undefined' ? options.offsetX : 50) / 100;
+      newBlocks.forEach((b, i) => {
+        const h = getHeight(b.area);
+        let isLeftBlock;
+        if (b.intercaladoDir === 'left') {
+          isLeftBlock = true;
+        } else if (b.intercaladoDir === 'right') {
+          isLeftBlock = false;
+        } else {
+          isLeftBlock = i % 2 === 0;
+        }
+        b.x = isLeftBlock ? 0 : width * offsetPercent;
         b.y = currentY;
         currentY += h + gap;
       });
